@@ -1,0 +1,110 @@
+#store csv into hdfs
+hdfs dfs -mkdir /user/shopee
+hdfs dfs -put /../Ecommerce_data.csv /user/shopee
+
+#create external hive table
+CREATE EXTERNAL TABLE IF NOT EXISTS Commerce(
+  invoice_no STRING, product_id STRING, description STRING, 
+  quantity INT, purchased_at STRING, unit_price INT, customer_id INT, country STRING)
+COMMENT 'raw data'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/shopee'
+tblproperties ("skip.header.line.count"="1");
+
+#create another customer_purchased
+CREATE TABLE customer_purchased_raw as
+select 
+  customer_id, product_id, description,
+  MAX(UNIX_TIMESTAMP(purchased_at, 'dd/MM/yyyy HH:mm')) as purchased_at, 
+  count(1) as purchase_count
+from Commerce
+where customer_id is not NULL and description is not NULL
+group by customer_id, product_id, description;
+
+#Create another internal table #drop original customer_purchased table
+CREATE TABLE customer_purchased_final(
+  customer_id INT, product_id STRING, description STRING,
+  purchased_at INT, purchase_count INT)
+COMMENT 'purchase history'
+STORED AS ORC;
+
+#pull data
+INSERT OVERWRITE TABLE customer_purchased_final SELECT * FROM customer_purchased_raw 
+WHERE purchased_at is not NULL;
+
+#create another internal table
+CREATE TABLE recently_purchased_product_final(
+  rank int, purchased_at int, customer_id INT, product_id STRING, description STRING);
+
+#pull and process data
+INSERT OVERWRITE TABLE recently_purchased_product_final
+SELECT
+  hivemall.each_top_k(5, customer_id, purchased_at,  customer_id, product_id, description) 
+  as (rank, purchased_at, customer_id, product_id, description)
+FROM (
+SELECT
+  purchased_at, customer_id, product_id, description
+FROM
+  customer_purchased_final
+CLUSTER BY
+  customer_id) t;
+
+#Cooccurrence-based Recommendation
+CREATE TABLE cooccurrence_final AS
+SELECT
+  u1.product_id, u1.description, 
+  u2.product_id as other, u2.description as other_description,
+  count(1) as cnt
+FROM
+  customer_purchased_final u1
+JOIN 
+  customer_purchased_final u2 ON (u1.customer_id = u2.customer_id)
+WHERE
+  u1.product_id != u2.product_id 
+AND 
+  u2.purchased_at >= u1.purchased_at 
+group by
+  u1.product_id, u2.product_id, u1.description, u2.description;
+having 
+  cnt >= 2 -- count(1) >= 2
+;
+
+#Final Product Recommendation
+CREATE TABLE product_recommendation_final (customer_id INT, rec_product array<STRING>, description array<STRING>);
+
+WITH topk as (
+  select
+    hivemall.each_top_k(
+       5, customer_id, cnt,
+       customer_id, other, other_description
+    ) as (rank, cnt, customer_id, rec_item, description)
+  from (
+    select 
+      t1.customer_id, t2.other, max(t2.cnt) as cnt, t2.other_description
+    from
+      recently_purchased_product_final t1
+      JOIN cooccurrence_final t2 ON (t1.product_id = t2.product_id)
+    where
+      t1.product_id != t2.other 
+      AND NOT EXISTS (
+        SELECT a.product_id FROM customer_purchased_final a
+        WHERE a.customer_id = t1.customer_id AND a.product_id = t2.other
+         AND a.purchase_count <= 1 
+      )
+    group by
+      t1.customer_id, t2.other, t2.other_description
+    CLUSTER BY
+      customer_id 
+  ) t1
+  
+INSERT OVERWRITE TABLE product_recommendation
+select
+  customer_id,
+  map_values(hivemall.to_ordered_map(rank, rec_item)) as rec_items, 
+  map_values(hivemall.to_ordered_map(rank, description)) as description
+from
+  topk
+group by
+  customer_id;
