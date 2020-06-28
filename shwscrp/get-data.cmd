@@ -1,0 +1,25 @@
+@echo off
+dotnet run https://shopee.com.my/Women's-Clothing-cat.16 100 Womens-Clothing.csv
+dotnet run https://shopee.com.my/Health-Beauty-cat.129 100 Health-Beauty.csv
+dotnet run https://shopee.com.my/Baby-Toys-cat.27 100 Baby-Toys.csv
+dotnet run https://shopee.com.my/Home-Living-cat.26 100 Home-Living.csv
+dotnet run https://shopee.com.my/Women's-Bags-cat.18 100 Womens-Bags.csv
+dotnet run https://shopee.com.my/Muslim-Fashion-cat.127 100 Muslim-Fashion.csv
+dotnet run https://shopee.com.my/Groceries-Pets-cat.2600 100 Groceries-Pets.csv
+dotnet run https://shopee.com.my/Women's-Shoes-cat.128 100 Womens-Shoes.csv
+dotnet run https://shopee.com.my/Fashion-Accessories-cat.19 100 Fashion-Accessories.csv
+dotnet run https://shopee.com.my/Automotive-cat.16564 100 Automotive.csv
+dotnet run https://shopee.com.my/Travel-Luggage-cat.18250 100 Travel-Luggage.csv
+dotnet run https://shopee.com.my/Men's-Clothing-cat.17 100 Mens-Clothing.csv
+dotnet run https://shopee.com.my/Mobile-Gadgets-cat.131 100 Mobile-Gadgets.csv
+dotnet run https://shopee.com.my/Watches-cat.159 100 Watches.csv
+dotnet run https://shopee.com.my/Home-Appliances-cat.10040 100 Home-Appliances.csv
+dotnet run https://shopee.com.my/Men's-Bags-Wallets-cat.10090 100 Mens-Bags-Wallets.csv
+dotnet run https://shopee.com.my/Computer-Accessories-cat.174 100 Computer-Accessories.csv
+dotnet run https://shopee.com.my/Sports-Outdoor-cat.130 100 Sports-Outdoor.csv
+dotnet run https://shopee.com.my/Men's-Shoes-cat.2593 100 Mens-Shoes.csv
+dotnet run https://shopee.com.my/Games-Books-Hobbies-cat.29 100 Games-Books-Hobbies.csv
+dotnet run https://shopee.com.my/Tickets-Vouchers-cat.173 100 Tickets-Vouchers.csv
+dotnet run https://shopee.com.my/Gaming-Consoles-cat.18883 100 Gaming-Consoles.csv
+dotnet run https://shopee.com.my/Cameras-Drones-cat.22087 100 Cameras-Drones.csv
+dotnet run https://shopee.com.my/Others-cat.30 100 Others.csv
